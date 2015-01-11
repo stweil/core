@@ -286,6 +286,8 @@
 #define vasprintf rpl_vasprintf
 #endif	/* TEST_SNPRINTF */
 
+#include <stdlib.h>	/* For malloc(3). */
+
 #if !HAVE_SNPRINTF || !HAVE_VSNPRINTF || !HAVE_ASPRINTF || !HAVE_VASPRINTF
 # include <stdio.h>	/* For NULL, size_t, vsnprintf(3), and vasprintf(3). */
 # if HAVE_STDLIB_H

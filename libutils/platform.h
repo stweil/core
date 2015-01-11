@@ -631,10 +631,10 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #if !HAVE_DECL_STRCHRNUL
 char *strchrnul(const char *s, int c);
 #endif
-#if !HAVE_DECL_GMTIME_R
+#if !HAVE_DECL_GMTIME_R && !defined(gmtime_r)
 struct tm *gmtime_r(const time_t *timep, struct tm *result);
 #endif
-#if !HAVE_DECL_LOCALTIME_R
+#if !HAVE_DECL_LOCALTIME_R && !defined(localtime_r)
 struct tm *localtime_r(const time_t *timep, struct tm *result);
 #endif
 #if !HAVE_DECL_CHMOD

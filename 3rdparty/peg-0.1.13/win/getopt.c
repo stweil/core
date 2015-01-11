@@ -535,6 +535,7 @@ getopt(int nargc, char * const *nargv, const char *options)
 }
 #endif /* REPLACE_GETOPT */
 
+#ifdef REPLACE_GETOPT_LONG
 /*
  * getopt_long --
  *	Parse argc/argv argument vector.
@@ -547,6 +548,7 @@ getopt_long(int nargc, char * const *nargv, const char *options,
 	return (getopt_internal(nargc, nargv, options, long_options, idx,
 	    FLAG_PERMUTE));
 }
+#endif /* REPLACE_GETOPT_LONG */
 
 /*
  * getopt_long_only --

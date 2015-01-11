@@ -147,7 +147,8 @@ dnl used on other platforms for debugging purposes, but isn't otherwise
 dnl supported.
 dnl ######################################################################
 
-AC_ARG_ENABLE([builtin-extensions], [AS_HELP_STRING([Build binaries with builtin extensions])],
+AC_ARG_ENABLE([builtin-extensions],
+        [AS_HELP_STRING([--enable-builtin-extensions], [Build binaries with builtin extensions])],
               [],
               [
                   AS_CASE([${target_os}], [mingw*], [enable_builtin_extensions=yes], [enable_builtin_extensions=no])
@@ -181,11 +182,15 @@ AS_IF([test x"$enable_fhs" = xyes], [
     prefix=/var/cfengine
     case "$target_os" in
       mingw*)
-        WORKDIR=$(cmd /c "echo %PROGRAMFILES%\\Cfengine" | sed 's/\\/\\\\/g')
+        if test "$cross_compiling" = yes; then
+          WORKDIR=/var/cfengine
+        else
+          WORKDIR=$(cmd /c "echo %PROGRAMFILES%\\Cfengine" | sed 's/\\/\\\\/g')
+        fi
         MASTERDIR=default
         INPUTDIR=default
-        LOGDIR=$(cmd /c "echo %PROGRAMFILES%\\Cfengine" | sed 's/\\/\\\\/g')
-        PIDDIR=$(cmd /c "echo %PROGRAMFILES%\\Cfengine" | sed 's/\\/\\\\/g')
+        LOGDIR="$WORKDIR"
+        PIDDIR="$WORKDIR"
         STATEDIR=default
       ;;
       *)

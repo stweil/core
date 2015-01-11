@@ -689,7 +689,7 @@ int SetReceiveTimeout(int fd, unsigned long ms)
     };
     int ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 #else
-    int ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &ms, sizeof(ms));
+    int ret = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&ms, sizeof(ms));
 #endif
 
     if (ret != 0)

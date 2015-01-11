@@ -36,6 +36,8 @@
  * function implementation. */
 #undef pthread_sigmask
 
+#if !defined(pthread_sigmask)
+#if !HAVE_DECL_PTHREAD_SIGMASK
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset);
 
 
@@ -47,3 +49,4 @@ int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
 {
     return 0;
 }
+#endif

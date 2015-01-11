@@ -132,15 +132,15 @@ static bool IgnoreJailInterface(
 static void GetMacAddress(EvalContext *ctx, int fd, struct ifreq *ifr, struct ifreq *ifp, Rlist **interfaces,
                           Rlist **hardware)
 {
-    char name[CF_MAXVARSIZE];
-
-    snprintf(name, sizeof(name), "hardware_mac[%s]", CanonifyName(ifp->ifr_name));
-
     // mac address on a loopback interface doesn't make sense
     if (ifr->ifr_flags & IFF_LOOPBACK)
     {
       return;
     }
+
+    char name[CF_MAXVARSIZE];
+
+    snprintf(name, sizeof(name), "hardware_mac[%s]", CanonifyName(ifp->ifr_name));
 
 # if defined(SIOCGIFHWADDR) && defined(HAVE_STRUCT_IFREQ_IFR_HWADDR)
     char hw_mac[CF_MAXVARSIZE];

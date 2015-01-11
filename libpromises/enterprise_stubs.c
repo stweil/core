@@ -151,7 +151,7 @@ ENTERPRISE_FUNC_3ARG_DEFINE_STUB(int, RetrieveUnreliableValue, char *, caller, c
 }
 
 #if defined(__MINGW32__)
-ENTERPRISE_FUNC_4ARG_DEFINE_STUB(int, GetRegistryValue, char *, key, char *, name, char *, buf, int, bufSz)
+ENTERPRISE_FUNC_4ARG_DEFINE_STUB(int, GetRegistryValue, const char *, key, char *, name, char *, buf, int, bufSz)
 {
     return 0;
 }

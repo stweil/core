@@ -56,6 +56,7 @@ char *getenv ();
 #define NULL 0
 #endif
 
+#if defined(REPLACE_GETOPT_LONG)
 int
 getopt_long (argc, argv, options, long_options, opt_index)
      int argc;
@@ -66,6 +67,7 @@ getopt_long (argc, argv, options, long_options, opt_index)
 {
   return _getopt_internal (argc, argv, options, long_options, opt_index, 0);
 }
+#endif /* REPLACE_GETOPT_LONG */
 
 /* Like getopt_long, but '-' as well as '--' can indicate a long option.
    If an option that starts with '-' (not '--') doesn't match a long option,

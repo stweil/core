@@ -36,7 +36,7 @@ int NovaWin_chmod(const char *path, mode_t mode);
 
 int NovaWin_rename(const char *oldpath, const char *newpath);
 int NovaWin_FileExists(const char *fileName);
-int NovaWin_IsDir(char *fileName);
+int NovaWin_IsDir(const char *fileName);
 int NovaWin_TakeFileOwnership(char *path);
 int NovaWin_SetFileOwnership(char *path, SID *sid);
 off_t NovaWin_GetDiskUsage(char *file, CfSize type);
@@ -89,7 +89,7 @@ FnCallResult FnCallGroupExists(EvalContext *ctx, FnCall *fp, Rlist *finalargs);
 
 /* win_wmi.c */
 
-int NovaWin_PackageListInstalledFromAPI(EvalContext *ctx, PackageItem ** pkgList, Attributes a, Promise *pp);
+int NovaWin_PackageListInstalledFromAPI(EvalContext *ctx, PackageItem ** pkgList, Attributes a, const Promise *pp);
 
 /* win_execd_pipe.c */
 

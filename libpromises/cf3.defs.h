@@ -564,7 +564,7 @@ typedef enum
 # define CF_ABSPATHRANGE   "\"?(/.*)"
 #else
 // can start with e.g. c:\... or "c:\...  |  unix (for Cygwin-style paths)
-# define CF_ABSPATHRANGE   "\"?(([a-zA-Z]:\\\\.*)|(/.*))"
+# define CF_ABSPATHRANGE   "\"?(([a-zA-Z]:\\\\)|([/\\\\]).*)"
 #endif
 
 /* Any non-empty string can be an absolute path under Unix */

@@ -140,6 +140,7 @@ void log_entry(LogLevel level, char *format, ...)
     char *message = prepare_message(format, ap);
     va_end(ap);
 
+    // TODO: different values of LogLevel used here, cf. LOG_LEVEL_DEBUG.
     switch (level)
     {
     case LogCritical:

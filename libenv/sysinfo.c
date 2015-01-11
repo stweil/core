@@ -2599,7 +2599,8 @@ static FILE *ReadFirstLine(const char *filename, char *buf, int bufsize)
 
 static void GetCPUInfo(EvalContext *ctx)
 {
-#if defined(MINGW) || defined(NT)
+#if defined(__MINGW32__) || defined(NT)
+    (void)ctx;
     Log(LOG_LEVEL_VERBOSE, "!! cpu count not implemented on Windows platform");
     return;
 #else
@@ -2653,18 +2654,13 @@ static void GetCPUInfo(EvalContext *ctx)
     Log(LOG_LEVEL_VERBOSE, "Found %d processor%s", count, count > 1 ? "s" : "");
 
     char buf[CF_SMALLBUF] = "1_cpu";
-    if (count == 1)
-    {
-        EvalContextClassPutHard(ctx, buf, "source=agent,derived-from=sys.cpus");  // "1_cpu" from init - change if buf is ever used above
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "cpus", "1", CF_DATA_TYPE_STRING, "inventory,source=agent,attribute_name=CPU logical cores");
-    }
-    else
+    if (count > 1)
     {
         snprintf(buf, CF_SMALLBUF, "%d_cpus", count);
-        EvalContextClassPutHard(ctx, buf, "source=agent,derived-from=sys.cpus");
-        snprintf(buf, CF_SMALLBUF, "%d", count);
-        EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "cpus", buf, CF_DATA_TYPE_STRING, "inventory,source=agent,attribute_name=CPU logical cores");
     }
+    EvalContextClassPutHard(ctx, buf, "source=agent,derived-from=sys.cpus");
+    snprintf(buf, CF_SMALLBUF, "%d", count);
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, "cpus", buf, CF_DATA_TYPE_STRING, "inventory,source=agent,attribute_name=CPU logical cores");
 #endif /* MINGW || NT */
 }
 
@@ -2794,6 +2790,906 @@ int GetUptimeSeconds(time_t now)
 
     return boot_time > 0 ? now - boot_time : -1;
 }
+#else // __MINGW32__
+
+//~ ../../../configure --enable-debug --host=x86_64-w64-mingw32 --with-libxml2=/usr/x86_64-w64-mingw32 CFLAGS=-Wextra --disable-builtin-extensions
+//~ make ENTERPRISE_LDADD="-lshlwapi -lws2_32 -shared" ENTERPRISE_CFLAGS=-shared
+
+#include <dir.h>
+#include <process_lib.h>        // PROCESS_START_TIME_UNKNOWN
+
+#define TODO() \
+  Log(LOG_LEVEL_ERR, "Function %s not implemented for Windows", __func__)
+
+#define TODO2() ((void)0)
+#define TRACE(fmt, ...) Log(LOG_LEVEL_DEBUG, "%s(" fmt ")", __func__, __VA_ARGS__)
+
+int GetUptimeSeconds(time_t now)
+{
+    (void)now;
+    ULONGLONG uptime_ms = GetTickCount64();
+    return uptime_ms / 1000;
+}
+
+FILE *cf_popen(const char *command, const char *type, bool capture_stderr)
+{
+    (void)command;
+    (void)type;
+    (void)capture_stderr;
+    TODO();
+    return NULL;
+}
+
+FILE *cf_popensetuid(const char *command, const char *type,
+                     uid_t uid, gid_t gid, char *chdirv, char *chrootv,
+                     int background)
+{
+    (void)command;
+    (void)type;
+    (void)uid;
+    (void)gid;
+    (void)chdirv;
+    (void)chrootv;
+    (void)background;
+    TODO();
+    return NULL;
+}
+
+FILE *cf_popen_powershell(const char *command, const char *type)
+{
+    (void)command;
+    (void)type;
+    TODO();
+    return NULL;
+}
+
+FILE *cf_popen_powershell_setuid(const char *command, const char *type,
+                                 uid_t uid, gid_t gid,
+                                 char *chdirv, char *chrootv, int background)
+{
+    (void)command;
+    (void)type;
+    (void)uid;
+    (void)gid;
+    (void)chdirv;
+    (void)chrootv;
+    (void)background;
+    TODO();
+    return NULL;
+}
+
+FILE *cf_popen_sh(const char *command, const char *type)
+{
+    (void)command;
+    (void)type;
+    TODO();
+    return NULL;
+}
+
+FILE *cf_popen_shsetuid(const char *command, const char *type,
+                        uid_t uid, gid_t gid, char *chdirv, char *chrootv,
+                        int background)
+{
+    (void)command;
+    (void)type;
+    (void)uid;
+    (void)gid;
+    (void)chdirv;
+    (void)chrootv;
+    (void)background;
+    TODO();
+    return NULL;
+}
+
+int cf_pclose(FILE *pp)
+{
+    (void)pp;
+    TODO();
+    return 0;
+}
+
+int rpl_stat(const char *path, struct stat *buf)
+{
+#undef _stat64
+    TODO2();
+    TRACE("%s, %p", path, buf);
+    return _stat64(path, buf);
+}
+
+struct dirent *AllocateDirentForFilename(const char *filename)
+{
+    (void)filename;
+    TODO();
+    return NULL;
+}
+
+void CloseLog(void)
+{
+    TODO();
+}
+
+void CloseNetwork(void)
+{
+    TODO();
+}
+
+int CopyACLs(const char *src, const char *dst)
+{
+    (void)src;
+    (void)dst;
+    TODO();
+    return 0;
+}
+
+void CreateEmptyFile(char *name)
+{
+    TRACE("%s", name);
+    FILE *f = fopen(name, "w+");
+    if (f)
+    {
+        fclose(f);
+    }
+    TODO2();
+}
+
+struct Dir_
+{
+    DIR *dirh;
+    struct dirent *entrybuf;
+};
+
+/*
+ * Returns size of memory enough to hold path name_len bytes long.
+ */
+static size_t GetDirentBufferSize(size_t name_len)
+{
+    size_t name_end = (size_t) offsetof(struct dirent, d_name) + name_len + 1;
+
+    return (name_end > sizeof(struct dirent) ? name_end : sizeof(struct dirent));
+}
+
+static int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+{
+    (void)entry;
+    TODO2();
+    errno = 0;
+    *result = readdir(dirp);
+    return errno;
+}
+
+static size_t GetNameMax(DIR *dirp)
+{
+    (void)dirp;
+    return (FILENAME_MAX > 255) ? FILENAME_MAX : 255;
+}
+
+Dir *DirOpen(const char *dirname)
+{
+    Dir *ret = xcalloc(1, sizeof(Dir));
+#if 0
+    int safe_fd;
+
+    safe_fd = safe_open(dirname, O_RDONLY);
+    if (safe_fd < 0)
+    {
+        free(ret);
+        return NULL;
+    }
+#endif
+
+    ret->dirh = opendir(dirname);
+    if (ret->dirh == NULL)
+    {
+#if 0
+        close(safe_fd);
+#endif
+        free(ret);
+        return NULL;
+    }
+
+#if 0
+    struct stat safe_stat, dir_stat;
+    bool stat_failed = fstat(safe_fd, &safe_stat) < 0 || fstat(dirfd(ret->dirh), &dir_stat) < 0;
+    close(safe_fd);
+    if (stat_failed)
+    {
+        closedir(ret->dirh);
+        free(ret);
+        return NULL;
+    }
+
+    // Make sure we opened the same file descriptor as safe_open did.
+    if (safe_stat.st_dev != dir_stat.st_dev || safe_stat.st_ino != dir_stat.st_ino)
+    {
+        closedir(ret->dirh);
+        free(ret);
+        errno = EACCES;
+        return NULL;
+    }
+#endif
+
+    size_t dirent_buf_size = GetDirentBufferSize(GetNameMax(ret->dirh));
+
+    ret->entrybuf = xcalloc(1, dirent_buf_size);
+
+    return ret;
+}
+
+const struct dirent *DirRead(Dir *dir)
+{
+    errno = 0;
+
+    struct dirent *ret;
+    int err = readdir_r((DIR *) dir->dirh, dir->entrybuf, &ret);
+
+    if (err != 0)
+    {
+        errno = err;
+        return NULL;
+    }
+
+    if (ret == NULL)
+    {
+        return NULL;
+    }
+
+    return ret;
+}
+
+void DirClose(Dir *dir)
+{
+    closedir((DIR *) dir->dirh);
+    free(dir->entrybuf);
+    free(dir);
+}
+
+int ExclusiveLockFile(int fd)
+{
+    HANDLE handle = (HANDLE)_get_osfhandle(fd);
+    BOOL ok = LockFile(handle, 0, 0, UINT32_MAX, 0);
+    if (!ok)
+    {
+        TODO();
+        Log(LOG_LEVEL_ERR, "Couldn't lock file");
+    }
+    TODO2();
+    return ok ? 0 : -1;
+}
+
+int ExclusiveUnlockFile(int fd)
+{
+    HANDLE handle = (HANDLE)_get_osfhandle(fd);
+    BOOL ok = UnlockFile(handle, 0, 0, UINT32_MAX, 0);
+    if (!ok)
+    {
+        TODO();
+        Log(LOG_LEVEL_ERR, "Couldn't unlock file");
+    }
+    TODO2();
+    return ok ? 0 : -1;
+}
+
+const char *GetErrorStr(void)
+{
+    TODO2();
+    return "not implemented";
+}
+
+const char *GetErrorStrFromCode(int error_code)
+{
+    (void)error_code;
+    TODO();
+    return NULL;
+}
+
+time_t GetProcessStartTime(pid_t pid)
+{
+    HANDLE handle = (HANDLE)pid;
+    FILETIME creationTime;
+    FILETIME exitTime;
+    FILETIME kernelTime;
+    FILETIME userTime;
+    BOOL ok = GetProcessTimes(handle, &creationTime, &exitTime,
+                              &kernelTime, &userTime);
+    ULARGE_INTEGER t;
+    if (!ok)
+    {
+        Log(LOG_LEVEL_ERR, "GetProcessStartTime failed");
+        t.QuadPart = PROCESS_START_TIME_UNKNOWN;
+    }
+    else
+    {
+        t.u.LowPart = creationTime.dwLowDateTime;
+        t.u.HighPart = creationTime.dwHighDateTime;
+    }
+    TODO2();
+    return t.QuadPart;
+}
+
+bool GracefulTerminate(pid_t pid, time_t process_start_time)
+{
+    (void)pid;
+    (void)process_start_time;
+    TODO();
+    return 0;
+}
+
+int IsExecutable(const char *file)
+{
+    (void)file;
+    TODO();
+    return 0;
+}
+
+void OpenNetwork(void)
+{
+    TRACE("", 0);
+    TODO2();
+}
+
+UidList *Rlist2UidList(Rlist *uidnames, const Promise *pp)
+{
+    (void)uidnames;
+    (void)pp;
+    TODO();
+    return NULL;
+}
+
+GidList *Rlist2GidList(Rlist *gidnames, const Promise *pp)
+{
+    (void)gidnames;
+    (void)pp;
+    TODO();
+    return NULL;
+}
+
+bool ShellCommandReturnsZero(const char *command, ShellType shell)
+{
+    (void)command;
+    (void)shell;
+    TODO();
+    return false;
+}
+
+bool TryConnect(int sd, unsigned long timeout_ms,
+                const struct sockaddr *sa, socklen_t sa_len)
+{
+    (void)sd;
+    (void)timeout_ms;
+    (void)sa;
+    (void)sa_len;
+    TODO();
+    return false;
+}
+
+int uname(struct utsname *buf)
+{
+    static struct utsname template = {
+        //~ "Windows",
+        "WINDOWS_NT-6.1 workstation",
+        "unknown",
+        "release",
+        "version",
+        "x86_64"
+    };
+    memcpy(buf, &template, sizeof(*buf));
+    //~ struct utsname {
+       //~ char sysname[];    /* Operating system name (e.g., "Linux") */
+       //~ char nodename[];   /* Name within "some implementation-defined
+                             //~ network" */
+       //~ char release[];    /* Operating system release (e.g., "2.6.28") */
+       //~ char version[];    /* Operating system version */
+       //~ char machine[];    /* Hardware identifier */
+    //~ #ifdef _GNU_SOURCE
+       //~ char domainname[]; /* NIS or YP domain name */
+    //~ #endif
+    static char nodename[CF_BUFSIZE];
+    DWORD nodenameSz = sizeof(nodename);
+    BOOL ok = GetComputerName(nodename, &nodenameSz);
+    if (ok)
+    {
+        strlcpy(buf->nodename, nodename, sizeof(buf->nodename));
+    }
+    TODO2();
+    return 0;
+}
+
+int rpl_mkdir(const char *pathname, mode_t mode)
+{
+    TRACE("%s, 0%3o", pathname, mode);
+    return _mkdir(pathname);
+}
+
+int rpl_rename(const char *oldpath, const char *newpath)
+{
+#undef rename
+    TODO2();
+    return rename(oldpath, newpath);
+}
+
+void *shlib_open(const char *lib_name)
+{
+    Log(LOG_LEVEL_DEBUG, "Could not open shared library: %s\n", lib_name);
+    TODO2();
+    return NULL;
+}
+void *shlib_load(void *handle, const char *symbol_name)
+{
+    (void)handle;
+    (void)symbol_name;
+    TODO();
+    return 0;
+}
+
+void shlib_close(void *handle)
+{
+    (void)handle;
+    TODO();
+}
+
+/* win_api.c */
+
+int NovaWin_chmod(const char *path, mode_t mode);
+
+/* win_file.c */
+
+#define HashData ShlHashData    // Hack because of name conflict
+#include <shlwapi.h>            // PathFileExists
+
+FILE *NovaWin_FileHandleToStream(HANDLE fHandle, char *mode);
+int NovaWin_rename(const char *oldpath, const char *newpath);
+
+int NovaWin_FileExists(const char *fileName)
+{
+    BOOL ok = PathFileExists(fileName);
+    return ok;
+}
+
+int NovaWin_IsDir(const char *fileName)
+{
+    (void)fileName;
+    TODO();
+    return 0;
+}
+
+int NovaWin_TakeFileOwnership(char *path);
+int NovaWin_SetFileOwnership(char *path, SID *sid);
+
+off_t GetDiskUsage(char *file, CfSize type)
+{
+    DWORD sectorsPerCluster;
+    DWORD bytesPerSector;
+    DWORD numberOfFreeClusters;
+    DWORD totalNumberOfClusters;
+    BOOL ok = GetDiskFreeSpace(file, &sectorsPerCluster, &bytesPerSector,
+                               &numberOfFreeClusters, &totalNumberOfClusters);
+    if (!ok)
+    {
+        Log(LOG_LEVEL_ERR, "GetDiskUsage(%s, %d) failed", file, type);
+    }
+
+    off_t usage = 0;
+    off_t numberOfUsedClusters = totalNumberOfClusters - numberOfFreeClusters;
+    if (type == CF_SIZE_PERCENT)
+    {
+        usage = 100 * numberOfUsedClusters / totalNumberOfClusters;
+    }
+    else
+    {
+        usage = sectorsPerCluster * bytesPerSector * numberOfUsedClusters;
+    }
+
+    return usage;
+}
+
+/* win_log.c */
+
+void OpenLog(int facility)
+{
+    TRACE("%d", facility);
+    TODO2();
+}
+
+void CloseLog(void);
+
+void LogToSystemLog(const char *msg, LogLevel level)
+{
+    //~ char logmsg[4096];
+    static char *logLevelString[] = {
+        "Critical",
+        "Error",
+        "Warning",
+        "Notice",
+        "Info",
+        "Verbose",
+        "Debug"
+    };
+    //~ snprintf(logmsg, sizeof(logmsg), "CFEngine(%s) %s %s\n", AgentType, VPREFIX, msg);
+    //~ syslog(LogLevelToSyslogPriority(level), "%s", logmsg);
+    fprintf(stderr, "CFEngine %-8s %s\n",
+            level >= LOG_LEVEL_CRIT && level <= LOG_LEVEL_DEBUG
+            ? logLevelString[level] : "???", msg);
+    //~ TODO();
+}
+
+/* win_proc.c */
+
+int NovaWin_IsProcessRunning(pid_t pid);
+int NovaWin_RunCmd(const char *comm, ShellType shell, int inheritHandles, char *startDir, STARTUPINFO *si, HANDLE *procHandle);
+int NovaWin_GetCurrentProcessOwner(SID *sid, int sidSz);
+int NovaWin_SetTokenPrivilege(HANDLE token, char *privilegeName, int enablePriv);
+
+/* win_ps.c */
+
+int NovaWin_GetProcessSnapshot(Item **procdata);
+
+int GatherProcessUsers(Item **userList,
+                       int *userListSz, int *numRootProcs, int *numOtherProcs)
+{
+    (void)userList;
+    (void)userListSz;
+    (void)numRootProcs;
+    (void)numOtherProcs;
+    TODO();
+    return 0;
+}
+
+/* win_service_exec.c */
+
+void NovaWin_StartExecService(void)
+{
+    TODO();
+}
+
+/* win_sysinfo.c */
+
+int NovaWin_GetEnv(char *varName, char *varContents, int varContentsSz)
+{
+    return GetEnvironmentVariable(varName, varContents, varContentsSz);
+}
+
+static char theProgDir[MAX_PATH];
+
+int NovaWin_GetProgDir(char *progDir, int progDirSz)
+{
+    strlcpy(progDir, theProgDir, progDirSz);
+    return 1;
+}
+
+int NovaWin_GetSysDir(char *sysDir, int sysDirSz)
+{
+    return GetSystemDirectory(sysDir, sysDirSz);
+}
+
+int NovaWin_GetWinDir(char *winDir, int winDirSz)
+{
+    return GetWindowsDirectory(winDir, winDirSz);
+}
+
+const char *GetDefaultInputDir(void)
+{
+    return INPUTDIR;
+}
+
+const char *GetDefaultLogDir(void)
+{
+    return LOGDIR;
+}
+
+const char *GetDefaultMasterDir(void)
+{
+    return MASTERDIR;
+}
+
+const char *GetDefaultPidDir(void)
+{
+    return PIDDIR;
+}
+
+const char *GetDefaultWorkDir(void)
+{
+    return WORKDIR;
+}
+
+/* win_user.c */
+
+int NovaWin_UserNameToSid(char *userName, SID *sid,
+                          DWORD sidSz, int shouldExist)
+{
+    (void)userName;
+    (void)sid;
+    (void)sidSz;
+    (void)shouldExist;
+    TODO();
+    return 0;
+}
+
+int NovaWin_GroupNameToSid(char *groupName, SID *sid, DWORD sidSz, int shouldExist);
+int NovaWin_NameToSid(char *name, SID *sid, DWORD sidSz);
+int NovaWin_SidToName(SID *sid, char *name, int nameSz);
+int NovaWin_StringToSid(char *stringSid, SID *sid, int sidSz);
+
+FnCallResult FnCallUserExists(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+{
+    (void)ctx;
+    (void)fp;
+    (void)finalargs;
+    static FnCallResult result;
+    TODO();
+    return result;
+}
+
+FnCallResult FnCallGroupExists(EvalContext *ctx, FnCall *fp, Rlist *finalargs)
+{
+    (void)ctx;
+    (void)fp;
+    (void)finalargs;
+    static FnCallResult result;
+    TODO();
+    return result;
+}
+
+/* win_wmi.c */
+
+int NovaWin_PackageListInstalledFromAPI(EvalContext *ctx, PackageItem ** pkgList,
+                                        Attributes a, const Promise *pp)
+{
+    (void)ctx;
+    (void)pkgList;
+    (void)a;
+    (void)pp;
+    TODO();
+    return 0;
+}
+
+/* win_execd_pipe.c */
+
+bool IsReadReady(int fd, int timeout_sec)
+{
+    (void)fd;
+    (void)timeout_sec;
+    TODO();
+    return false;
+}
+
+/* win_common.c */
+
+#include <shfolder.h>   // SHGetFolderPath
+#include <shlobj.h>     // SHGFP_TYPE_CURRENT
+
+void InitializeWindows(void)
+{
+    HRESULT result = SHGetFolderPath(NULL, CSIDL_PROGRAM_FILES, NULL,
+                                     SHGFP_TYPE_CURRENT, theProgDir);
+    if (result != S_OK)
+    {
+        Log(LOG_LEVEL_ERR, "SHGetFolderPath failed");
+    }
+    TODO2();
+}
+
+int chown(const char *path, uid_t owner, gid_t group)
+{
+    TRACE("%s, %u, %u", path, owner, group);
+    TODO2();
+    return 0;
+}
+
+int fchmod(int fd, mode_t mode)
+{
+    (void)fd;
+    (void)mode;
+    TODO();
+    return 0;
+}
+
+int fsync(int fd)
+{
+    (void)fd;
+    TODO();
+    return 0;
+}
+
+gid_t getgid(void)
+{
+    TODO2();
+    return 0;
+}
+
+uid_t getuid(void)
+{
+    TODO2();
+    return 0;
+}
+
+int glob(const char *pattern, int flags,
+         int (*errfunc) (const char *epath, int eerrno), glob_t *pglob)
+{
+    (void)pattern;
+    (void)flags;
+    (void)errfunc;
+    (void)pglob;
+    TODO();
+    return 0;
+}
+
+void globfree(glob_t *pglob)
+{
+    (void)pglob;
+    TODO();
+}
+
+int lstat(const char *file_name, struct stat *buf)
+{
+    // TODO: handle symbolic links.
+    TODO2();
+    return stat(file_name, buf);
+}
+
+int socketpair(int domain, int type, int protocol, int sv[2])
+{
+    (void)domain;
+    (void)type;
+    (void)protocol;
+    (void)sv;
+    TODO();
+    return 0;
+}
+
+bool BootstrapAllowed(void)
+{
+    TODO();
+    return true;
+}
+
+bool PipeToPid(pid_t *pid, FILE *pp)
+{
+    (void)pid;
+    (void)pp;
+    TODO();
+    return false;
+}
+
+bool PipeTypeIsOk(const char *type);
+
+int DoAllSignals(EvalContext *ctx, Item *siglist,
+                 Attributes a, const Promise *pp, PromiseResult *result)
+{
+    (void)ctx;
+    (void)siglist;
+    (void)a;
+    (void)pp;
+    (void)result;
+    TODO();
+    return 0;
+}
+
+/**
+ * Returns what type of line endings the file is using.
+ *
+ * @param file File to check.
+ * @return Always returns NewLineMode_Unix on Unix. On Windows it may return
+ *         NewLineMode_Native if the file has CRLF line endings.
+ *         If the file cannot be opened, or the line endings are mixed it will
+ *         return NewLineMode_Native. Note that only the first CF_BUFSIZE bytes
+ *         are checked.
+ */
+NewLineMode FileNewLineMode(const char *file)
+{
+    (void)file;
+    TODO();
+    return NewLineMode_Unix;
+}
+
+void GetInterfacesInfo(EvalContext *ctx)
+{
+    char name[CF_MAXVARSIZE];
+#if 0
+    // mac address on a loopback interface doesn't make sense
+    if (ifr->ifr_flags & IFF_LOOPBACK)
+    {
+      return;
+    }
+    snprintf(name, sizeof(name), "hardware_mac[%s]", CanonifyName(ifp->ifr_name));
+#endif
+    snprintf(name, sizeof(name), "hardware_mac[%s]", "ff:fe:fd:fc:fb:fa");
+    EvalContextVariablePutSpecial(ctx, SPECIAL_SCOPE_SYS, name, "mac_unknown", CF_DATA_TYPE_STRING, "source=agent");
+    EvalContextClassPutHard(ctx, "mac_unknown", "source=agent");
+    TODO2();
+}
+
+int GetOwnerName(char *path, struct stat *lstatptr, char *owner, int ownerSz)
+{
+    (void)path;
+    (void)lstatptr;
+    (void)owner;
+    (void)ownerSz;
+    TODO();
+    return 0;
+}
+
+int LoadProcessTable(Item **procdata)
+{
+    (void)procdata;
+    TODO();
+    return 0;
+}
+
+PromiseResult Nova_CheckNtACL(EvalContext *ctx, const char *file_path, Acl acl,
+                              Attributes a, const Promise *pp)
+{
+    (void)ctx;
+    (void)file_path;
+    (void)acl;
+    (void)a;
+    (void)pp;
+    TODO();
+    return 0;
+}
+
+PromiseResult VerifyWindowsService(EvalContext *ctx,
+                                   Attributes a, const Promise *pp)
+{
+    (void)ctx;
+    (void)a;
+    (void)pp;
+    TODO();
+    return 0;
+}
+
+//~ PromiseResult VerifyUsersPromise(EvalContext *ctx, const Promise *pp);
+
+void VerifyOneUsersPromise (const char *puser, User u, PromiseResult *result,
+                            enum cfopaction action, EvalContext *ctx,
+                            const Attributes *a, const Promise *pp)
+{
+    (void)puser;
+    (void)u;
+    (void)result;
+    (void)action;
+    (void)ctx;
+    (void)a;
+    (void)pp;
+    TODO();
+}
+
+bool VerifyOwner(EvalContext *ctx, const char *file, const Promise *pp,
+                 Attributes attr, struct stat *sb, PromiseResult *result)
+{
+    (void)ctx;
+    (void)file;
+    (void)pp;
+    (void)attr;
+    (void)sb;
+    (void)result;
+    TODO();
+    return false;
+}
+
+PromiseResult VerifyRegistryPromise(EvalContext *ctx,
+                                    Attributes a, const Promise *pp)
+{
+    (void)ctx;
+    (void)a;
+    (void)pp;
+    TODO();
+    return 0;
+}
+
+int GetCurrentUserName(char *userName, int userNameLen)
+{
+    (void)userName;
+    (void)userNameLen;
+    TODO();
+    return 0;
+}
+
+void ProcessSignalTerminate(pid_t pid)
+{
+    (void)pid;
+    TODO();
+}
+
 #endif // !__MINGW32__
 
 int GetUptimeMinutes(time_t now)
@@ -2801,6 +3697,7 @@ int GetUptimeMinutes(time_t now)
     return GetUptimeSeconds(now) / SECONDS_PER_MINUTE;
 }
 
+#ifndef __MINGW32__
 /******************************************************************/
 
 // Last resort: parse the output of the uptime command with a PCRE regexp
@@ -2894,6 +3791,7 @@ static time_t GetBootTimeFromUptimeCommand(time_t now)
     Log(LOG_LEVEL_VERBOSE, "Reading boot time from uptime command successful.");
     return(uptime ? (now - uptime) : -1);
 }
+#endif /* !__MINGW32__ */
 
 /*****************************************************************************/
 
