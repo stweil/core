@@ -1,3 +1,24 @@
+#if 0
+CloseLog
+GatherProcessUsers
+GetCurrentUserName
+LoadProcessTable
+NovaWin_StartExecService
+Rlist2GidList
+Rlist2UidList
+ShellCommandReturnsZero
+TryConnect
+fsync
+socketpair
+Backtrace:
+=>0 0x000000007b89e529 FindNextVolumeW+0x69() in kernel32 (0x0000000000000021)
+  1 0x0000000003eb5b44 in libpromises-3 (+0x95b43) (0x0000000000000021)
+  2 0x0000000003e537a0 in libpromises-3 (+0x3379f) (0x000000000031b890)
+  3 0x0000000003e53a76 in libpromises-3 (+0x33a75) (0x000000000031b930)
+  4 0x000000000040c750 in cf-agent (+0xc74f) (0x000000000031b9c0)
+  5 0x000000000040972a in cf-agent (+0x9729) (0x000000000031f470)
+  6 0x000000000040c38f in cf-agent (+0xc38e) (0x000000000031ff90
+#endif
 /*
    Copyright (C) CFEngine AS
 
@@ -2802,7 +2823,8 @@ int GetUptimeSeconds(time_t now)
   Log(LOG_LEVEL_ERR, "Function %s not implemented for Windows", __func__)
 
 #define TODO2() ((void)0)
-#define TRACE(fmt, ...) Log(LOG_LEVEL_DEBUG, "%s(" fmt ")", __func__, __VA_ARGS__)
+//~ #define TRACE(fmt, ...) Log(LOG_LEVEL_DEBUG, "%s(" fmt ")", __func__, __VA_ARGS__)
+#define TRACE(fmt, ...) fprintf(stderr, "TRACE %s(" fmt ")\n", __func__, __VA_ARGS__)
 
 int GetUptimeSeconds(time_t now)
 {
@@ -2837,8 +2859,7 @@ FILE *cf_popensetuid(const char *command, const char *type,
 
 FILE *cf_popen_powershell(const char *command, const char *type)
 {
-    (void)command;
-    (void)type;
+    TRACE("%s, %s", command, type);
     TODO();
     return NULL;
 }
@@ -2847,8 +2868,7 @@ FILE *cf_popen_powershell_setuid(const char *command, const char *type,
                                  uid_t uid, gid_t gid,
                                  char *chdirv, char *chrootv, int background)
 {
-    (void)command;
-    (void)type;
+    TRACE("%s, %s, ...", command, type);
     (void)uid;
     (void)gid;
     (void)chdirv;
@@ -2860,18 +2880,15 @@ FILE *cf_popen_powershell_setuid(const char *command, const char *type,
 
 FILE *cf_popen_sh(const char *command, const char *type)
 {
-    (void)command;
-    (void)type;
-    TODO();
-    return NULL;
+    TRACE("%s, %s", command, type);
+    return _popen(command, type);
 }
 
 FILE *cf_popen_shsetuid(const char *command, const char *type,
                         uid_t uid, gid_t gid, char *chdirv, char *chrootv,
                         int background)
 {
-    (void)command;
-    (void)type;
+    TRACE("%s, %s, ...", command, type);
     (void)uid;
     (void)gid;
     (void)chdirv;
@@ -2883,9 +2900,7 @@ FILE *cf_popen_shsetuid(const char *command, const char *type,
 
 int cf_pclose(FILE *pp)
 {
-    (void)pp;
-    TODO();
-    return 0;
+    return _pclose(pp);
 }
 
 int rpl_stat(const char *path, struct stat *buf)
@@ -3207,23 +3222,89 @@ int rpl_rename(const char *oldpath, const char *newpath)
     return rename(oldpath, newpath);
 }
 
+static void *shHandle;
+
 void *shlib_open(const char *lib_name)
 {
-    Log(LOG_LEVEL_DEBUG, "Could not open shared library: %s\n", lib_name);
-    TODO2();
-    return NULL;
+    TRACE("%s", lib_name);
+    if (shHandle == NULL)
+    {
+        shHandle = &shHandle;
+    }
+    else
+    {
+        Log(LOG_LEVEL_DEBUG, "Could not open shared library: %s", lib_name);
+        return NULL;
+    }
+    return shHandle;
 }
+
+static const char *GetExtensionLibraryVersion(void)
+{
+    const char *version = getenv("CFENGINE_TEST_RETURN_VERSION");
+    if (version)
+    {
+        return version;
+    }
+    else
+    {
+        return VERSION;
+    }
+}
+
 void *shlib_load(void *handle, const char *symbol_name)
 {
-    (void)handle;
-    (void)symbol_name;
-    TODO();
-    return 0;
+    void *address = NULL;
+    TRACE("%p, %s", handle, symbol_name);
+    if (handle == &shHandle)
+    {
+        if (!strcmp(symbol_name, "GetExtensionLibraryVersion"))
+        {
+            address = GetExtensionLibraryVersion;
+        }
+        else if (!strcmp(symbol_name, "GenericAgentSetDefaultDigest__wrapper"))
+        {
+            //~ address = GenericAgentSetDefaultDigest__wrapper;
+        }
+        else if (!strcmp(symbol_name, "GenericAgentAddEditionClasses__wrapper"))
+        {
+            //~ address = GenericAgentAddEditionClasses__wrapper;
+        }
+        else if (!strcmp(symbol_name, "EnterpriseContext__wrapper"))
+        {
+            //~ address = GenericAgentAddEditionClasses__wrapper;
+        }
+        else if (!strcmp(symbol_name, "Nova_Initialize__wrapper"))
+        {
+            //~ address = GenericAgentAddEditionClasses__wrapper;
+        }
+        else if (!strcmp(symbol_name, "EvalContextLogPromiseIterationOutcome__wrapper"))
+        {
+            //~ address = GenericAgentAddEditionClasses__wrapper;
+        }
+//~ TRACE shlib_load(0x3f21380, Nova_NoteClassUsage__wrapper)
+//~ TRACE shlib_load(0x3f21380, Nova_NoteVarUsageDB__wrapper)
+//~ TRACE shlib_load(0x3f21380, Nova_TrackExecution__wrapper)
+//~ TRACE shlib_load(0x3f21380, GenerateDiffReports__wrapper)
+//~ TRACE shlib_load(0x3f21380, Nova_NoteAgentExecutionPerformance__wrapper)
+    }
+    else
+    {
+        Log(LOG_LEVEL_DEBUG, "Could not read symbol: %s", symbol_name);
+    }
+    TODO2();
+    return address;
 }
 
 void shlib_close(void *handle)
 {
-    (void)handle;
+    if (handle == &shHandle)
+    {
+    }
+    else
+    {
+        Log(LOG_LEVEL_DEBUG, "Could not close shared library");
+    }
     TODO();
 }
 
