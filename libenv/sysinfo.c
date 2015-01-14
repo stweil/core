@@ -3160,8 +3160,7 @@ GidList *Rlist2GidList(Rlist *gidnames, const Promise *pp)
 
 bool ShellCommandReturnsZero(const char *command, ShellType shell)
 {
-    (void)command;
-    (void)shell;
+    TRACE("%s, %d", command, shell);
     TODO();
     return false;
 }
@@ -3252,43 +3251,329 @@ static const char *GetExtensionLibraryVersion(void)
     }
 }
 
+static void Nova_Initialize__wrapper(EvalContext *ctx)
+{
+    TRACE("%p", ctx);
+}
+
+#if 0
+
+/* all agents: generic_agent.c */
+
+ENTERPRISE_FUNC_0ARG_DEFINE_STUB(const char *, GetConsolePrefix)
+{
+    return "cf3";
+}
+
+#endif
+
+/* all agents: sysinfo.c */
+
+static void EnterpriseContext__wrapper(EvalContext *ctx)
+{
+    TRACE("%p", ctx);
+}
+
+#if 0
+
+void LoadSlowlyVaryingObservations, ARG_UNUSED EvalContext *ctx)
+{
+    Log(LOG_LEVEL_VERBOSE, "Extended system discovery is only available in CFEngine Enterprise");
+}
+
+/* all agents: cfstream.c, expand.c, generic_agent.c */
+
+
+ENTERPRISE_FUNC_1ARG_DEFINE_STUB(const char *, PromiseID, ARG_UNUSED const Promise *, pp)
+{
+    return "";
+}
+
+
+/* all agents: logging.c */
+
+
+ENTERPRISE_VOID_FUNC_3ARG_DEFINE_STUB(void NotePromiseCompliance, ARG_UNUSED const Promise *, pp,
+                                      ARG_UNUSED PromiseState, state, ARG_UNUSED const char *, reason)
+{
+}
+
+ENTERPRISE_VOID_FUNC_4ARG_DEFINE_STUB(void TrackValue, char *, date, double, kept, double, repaired, double, notkept)
+{
+}
+
+ENTERPRISE_VOID_FUNC_2ARG_DEFINE_STUB(void LogTotalCompliance, const char *, version, int, background_tasks)
+{
+    double total = (double) (PR_KEPT + PR_NOTKEPT + PR_REPAIRED) / 100.0;
+
+    char string[CF_BUFSIZE] = { 0 };
+
+    snprintf(string, CF_BUFSIZE,
+             "Outcome of version %s (" CF_AGENTC "-%d): Promises observed to be kept %.2f%%, Promises repaired %.2f%%, Promises not repaired %.2f%%",
+             version, background_tasks,
+             (double) PR_KEPT / total,
+             (double) PR_REPAIRED / total,
+             (double) PR_NOTKEPT / total);
+
+    Log(LOG_LEVEL_VERBOSE, "Logging total compliance, total '%s'", string);
+
+    char filename[CF_BUFSIZE];
+    snprintf(filename, CF_BUFSIZE, "%s/%s", GetLogDir(), CF_PROMISE_LOG);
+    MapName(filename);
+
+    FILE *fout = fopen(filename, "a");
+    if (fout == NULL)
+    {
+        Log(LOG_LEVEL_ERR, "In total compliance logging, could not open file '%s'. (fopen: %s)", filename, GetErrorStr());
+    }
+    else
+    {
+        fprintf(fout, "%jd,%jd: %s\n", (intmax_t)CFSTARTTIME, (intmax_t)time(NULL), string);
+        fclose(fout);
+    }
+}
+
+
+/* network communication: cf-serverd.c, client_protocol.c, client_code.c, crypto.c */
+
+
+ENTERPRISE_FUNC_1ARG_DEFINE_STUB(int, CfSessionKeySize, char, type)
+{
+    return CF_BLOWFISHSIZE;
+}
+
+ENTERPRISE_FUNC_0ARG_DEFINE_STUB(char, CfEnterpriseOptions)
+{
+    return 'c';
+}
+
+ENTERPRISE_FUNC_1ARG_DEFINE_STUB(const EVP_CIPHER *, CfengineCipher, char, type)
+{
+    return EVP_bf_cbc();
+}
+
+/* cf-agent: evalfunction.c */
+
+ENTERPRISE_FUNC_6ARG_DEFINE_STUB(char *, GetRemoteScalar, EvalContext *ctx, char *, proto, char *, handle,
+                                 char *, server, int, encrypted, char *, rcv)
+{
+    TRACE("%p", ctx);
+    Log(LOG_LEVEL_VERBOSE, "Access to server literals is only available in CFEngine Enterprise");
+    return "";
+}
+
+ENTERPRISE_VOID_FUNC_3ARG_DEFINE_STUB(void CacheUnreliableValue, char *, caller, char *, handle, char *, buffer)
+{
+    Log(LOG_LEVEL_VERBOSE, "Value fault-tolerance only available in CFEngine Enterprise");
+}
+
+ENTERPRISE_FUNC_3ARG_DEFINE_STUB(int, RetrieveUnreliableValue, char *, caller, char *, handle, char *, buffer)
+{
+    Log(LOG_LEVEL_VERBOSE, "Value fault-tolerance only available in CFEngine Enterprise");
+    return false;
+}
+
+#if defined(__MINGW32__)
+ENTERPRISE_FUNC_4ARG_DEFINE_STUB(int, GetRegistryValue, const char *, key, char *, name, char *, buf, int, bufSz)
+{
+    return 0;
+}
+#endif
+
+ENTERPRISE_FUNC_6ARG_DEFINE_STUB(void *, CfLDAPValue, char *, uri, char *, dn, char *, filter, char *, name, char *, scope, char *, sec)
+{
+    Log(LOG_LEVEL_ERR, "LDAP support only available in CFEngine Enterprise");
+    return NULL;
+}
+
+ENTERPRISE_FUNC_6ARG_DEFINE_STUB(void *, CfLDAPList, char *, uri, char *, dn, char *, filter, char *, name, char *, scope, char *, sec)
+{
+    Log(LOG_LEVEL_ERR, "LDAP support only available in CFEngine Enterprise");
+    return NULL;
+}
+
+ENTERPRISE_FUNC_8ARG_DEFINE_STUB(void *, CfLDAPArray, EvalContext *ctx, const Bundle *, caller, char *, array, char *, uri, char *, dn,
+                                 char *, filter, char *, scope, char *, sec)
+{
+    TRACE("%p", ctx);
+    Log(LOG_LEVEL_ERR, "LDAP support only available in CFEngine Enterprise");
+    return NULL;
+}
+
+ENTERPRISE_FUNC_8ARG_DEFINE_STUB(void *, CfRegLDAP, EvalContext *ctx, char *, uri, char *, dn, char *, filter, char *, name, char *, scope, char *, regex, char *, sec)
+{
+    TRACE("%p", ctx);
+    Log(LOG_LEVEL_ERR, "LDAP support only available in CFEngine Enterprise");
+    return NULL;
+}
+
+ENTERPRISE_FUNC_4ARG_DEFINE_STUB(bool, ListHostsWithClass, EvalContext *ctx, Rlist **, return_list, char *, class_name, char *, return_format)
+{
+    TRACE("%p", ctx);
+    Log(LOG_LEVEL_ERR, "Host class counting is only available in CFEngine Enterprise");
+    return false;
+}
+
+/* cf-serverd: server_transform.c, cf-serverd.c */
+
+ENTERPRISE_VOID_FUNC_2ARG_DEFINE_STUB(void TranslatePath, char *, new, const char *, old)
+{
+    strlcpy(new, old, CF_BUFSIZE);
+}
+
+
+ENTERPRISE_VOID_FUNC_2ARG_DEFINE_STUB(void ShowPromises, ARG_UNUSED const Seq *, bundles, ARG_UNUSED const Seq *, bodies)
+{
+}
+
+void ShowPromise, ARG_UNUSED const Promise *, pp)
+{
+}
+
+#endif
+
+static void EvalContextLogPromiseIterationOutcome__wrapper(
+                                      EvalContext *ctx, const Promise *pp,
+                                      PromiseResult result)
+{
+    TRACE("%p, %p, ...", ctx, pp);
+    (void)result;
+}
+
+#if 0
+
+ENTERPRISE_VOID_FUNC_3ARG_DEFINE_STUB(void GetObservable, ARG_UNUSED int, i, ARG_UNUSED char *, name, ARG_UNUSED char *, desc)
+{
+    strcpy(name, OBS[i][0]);
+}
+
+void SetMeasurementPromises, ARG_UNUSED Item **, classlist)
+{
+}
+
+ENTERPRISE_VOID_FUNC_2ARG_DEFINE_STUB(void CheckAndSetHAState, ARG_UNUSED const char *, workdir, ARG_UNUSED EvalContext *ctx)
+{
+}
+
+ENTERPRISE_VOID_FUNC_0ARG_DEFINE_STUB(void ReloadHAConfig)
+{
+}
+
+ENTERPRISE_FUNC_0ARG_DEFINE_STUB(size_t, EnterpriseGetMaxCfHubProcesses)
+{
+    return 0;
+}
+
+static void LastSawBundle(const Bundle *bundle, double comp)
+{
+    TRACE("%s, %f", bundle, comp);
+}
+#endif
+
+typedef struct CompressedArray_
+{
+    int key;
+    char *value;
+    struct CompressedArray_ *next;
+} CompressedArray;
+
+#if 0
+typedef bool (*CopyRegularFileFunction)(EvalContext *ctx,
+                                       const char *source,
+                                       const char *dest,
+                                       struct stat sstat,
+                                       struct stat dstat,
+                                       Attributes attr,
+                                       const Promise *pp,
+                                       CompressedArray **inode_cache,
+                                       AgentConnection *conn,
+                                       PromiseResult *result);
+typedef void (*DeleteCompressedArrayFunction)(CompressedArray *start);
+
+static PromiseResult LogFileChange(EvalContext *ctx, const char *file,
+                                   int change, Attributes a, const Promise *pp,
+                                   CopyRegularFileFunction CopyRegularFilePtr,
+                                   const char *destination,
+                                   DeleteCompressedArrayFunction DeleteCompressedArrayPtr)
+{
+    TRACE("%p, %s, %d, ..., %s", ctx, file, change, destination);
+    (void)a;
+    (void)pp;
+    (void)CopyRegularFilePtr;
+    (void)CopyRegularFilePtr;
+    (void)DeleteCompressedArrayPtr;
+    Log(LOG_LEVEL_VERBOSE, "Logging file differences requires version Nova or above");
+    return PROMISE_RESULT_NOOP;
+}
+#endif
+
+typedef struct {} GenericAgentConfig;
+
+static void Nova_NoteVarUsageDB__wrapper(EvalContext *ctx, const GenericAgentConfig *config)
+{
+    TRACE("%p, %p", ctx, config);
+}
+
+static void Nova_NoteClassUsage__wrapper(EvalContext *ctx,
+                                const GenericAgentConfig * config)
+{
+    TRACE("%p, %p", ctx, config);
+}
+
+static void Nova_TrackExecution__wrapper(const char *input_file)
+{
+    TRACE("%s", input_file);
+}
+
+static void GenerateDiffReports__wrapper(const GenericAgentConfig *config)
+{
+    TRACE("%p", config);
+}
+
+static void Nova_NoteAgentExecutionPerformance__wrapper(const char *input_file,
+                                               struct timespec start)
+{
+    TRACE("%s", input_file);
+    (void)start;
+}
+
+typedef struct
+{
+    const char *key;
+    void *value;
+} KeyValue;
+
+static const KeyValue nameAddrList[] = {
+    { "EnterpriseContext__wrapper", EnterpriseContext__wrapper },
+    { "EvalContextLogPromiseIterationOutcome__wrapper", EvalContextLogPromiseIterationOutcome__wrapper },
+    //~ { "GenericAgentAddEditionClasses__wrapper", GenericAgentAddEditionClasses__wrapper },
+    //~ { "GenericAgentSetDefaultDigest__wrapper", GenericAgentSetDefaultDigest__wrapper },
+    { "GenerateDiffReports__wrapper", GenerateDiffReports__wrapper },
+    { "GetExtensionLibraryVersion", GetExtensionLibraryVersion },
+    { "Nova_Initialize__wrapper", Nova_Initialize__wrapper },
+    { "Nova_NoteAgentExecutionPerformance__wrapper", Nova_NoteAgentExecutionPerformance__wrapper },
+    { "Nova_NoteClassUsage__wrapper", Nova_NoteClassUsage__wrapper },
+    { "Nova_NoteVarUsageDB__wrapper", Nova_NoteVarUsageDB__wrapper },
+    { "Nova_TrackExecution__wrapper", Nova_TrackExecution__wrapper },
+};
+
 void *shlib_load(void *handle, const char *symbol_name)
 {
     void *address = NULL;
     TRACE("%p, %s", handle, symbol_name);
     if (handle == &shHandle)
     {
-        if (!strcmp(symbol_name, "GetExtensionLibraryVersion"))
+        size_t i;
+        for (i = 0; i < sizeof(nameAddrList) / sizeof(*nameAddrList); i++)
         {
-            address = GetExtensionLibraryVersion;
+            if (!strcmp(symbol_name, nameAddrList[i].key))
+            {
+                address = nameAddrList[i].value;
+                break;
+            }
         }
-        else if (!strcmp(symbol_name, "GenericAgentSetDefaultDigest__wrapper"))
-        {
-            //~ address = GenericAgentSetDefaultDigest__wrapper;
-        }
-        else if (!strcmp(symbol_name, "GenericAgentAddEditionClasses__wrapper"))
-        {
-            //~ address = GenericAgentAddEditionClasses__wrapper;
-        }
-        else if (!strcmp(symbol_name, "EnterpriseContext__wrapper"))
-        {
-            //~ address = GenericAgentAddEditionClasses__wrapper;
-        }
-        else if (!strcmp(symbol_name, "Nova_Initialize__wrapper"))
-        {
-            //~ address = GenericAgentAddEditionClasses__wrapper;
-        }
-        else if (!strcmp(symbol_name, "EvalContextLogPromiseIterationOutcome__wrapper"))
-        {
-            //~ address = GenericAgentAddEditionClasses__wrapper;
-        }
-//~ TRACE shlib_load(0x3f21380, Nova_NoteClassUsage__wrapper)
-//~ TRACE shlib_load(0x3f21380, Nova_NoteVarUsageDB__wrapper)
-//~ TRACE shlib_load(0x3f21380, Nova_TrackExecution__wrapper)
-//~ TRACE shlib_load(0x3f21380, GenerateDiffReports__wrapper)
-//~ TRACE shlib_load(0x3f21380, Nova_NoteAgentExecutionPerformance__wrapper)
     }
-    else
+    if (address == NULL)
     {
         Log(LOG_LEVEL_DEBUG, "Could not read symbol: %s", symbol_name);
     }
