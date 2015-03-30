@@ -31,6 +31,7 @@
 void DetectEnvironment(EvalContext *ctx);
 
 void CreateHardClassesFromCanonification(EvalContext *ctx, const char *canonified, char *tags);
+time_t GetBootTime(void);
 int GetUptimeMinutes(time_t now);
 int GetUptimeSeconds(time_t now);
 
